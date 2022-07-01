@@ -4,9 +4,9 @@ model:
 
 sample:
   seed: 2020
-  num_samples: 100
+  num_samples: 1000
   beam_size: 300
-  max_steps: 50
+  max_steps: 45
   threshold:
     focal_threshold: 0.5
     pos_threshold: 0.25
