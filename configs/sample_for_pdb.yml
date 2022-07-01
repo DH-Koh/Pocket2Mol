@@ -4,7 +4,7 @@ model:
 
 sample:
   seed: 2020
-  num_samples: 2000
+  num_samples: 1500
   beam_size: 300
   max_steps: 45
   threshold:
