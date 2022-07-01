@@ -152,12 +152,15 @@ if __name__ == '__main__':
 
     print_pool_status(pool, logger)
     logger.info('Saving samples...')
-    torch.save(pool, os.path.join(log_dir, 'samples_init.pt'))
 
     # # Sampling loop
     logger.info('Start sampling')
     global_step = 0
 
+    # # Save sdf mols
+    sdf_dir = os.path.join(log_dir, 'SDF')
+    os.makedirs(sdf_dir)
+    
     try:
         while len(pool.finished) < config.sample.num_samples:
             global_step += 1
@@ -186,7 +189,6 @@ if __name__ == '__main__':
                             data_next.smiles = smiles
                             if smiles in pool.smiles:
                                 logger.warning('Duplicate molecule: %s' % smiles)
-                                pool.duplicate.append(data_next)
                             elif '.' in smiles:
                                 logger.warning('Failed molecule: %s' % smiles)
                                 pool.failed.append(data_next)
@@ -194,6 +196,10 @@ if __name__ == '__main__':
                                 logger.info('Success: %s' % smiles)
                                 pool.finished.append(data_next)
                                 pool.smiles.add(smiles)
+                                i = len(pool.finished)
+                                Chem.MolToMolFile(rdmol, os.path.join(sdf_dir, '%d.sdf' % i))
+                                with open(os.path.join(log_dir, 'SMILES.txt'), 'a') as smiles_f:
+                                    smiles_f.write(smiles + '\n')
                         except MolReconsError:
                             logger.warning('Ignoring, because reconstruction error encountered.')
                             pool.failed.append(data_next)
@@ -203,6 +209,7 @@ if __name__ == '__main__':
                 queue_tmp += nexts
                 if len(nexts) > 0:
                     queue_weight += [1. / len(nexts)] * len(nexts)
+            
             # # random choose mols from candidates
             prob = logp_to_rank_prob(np.array([p.average_logp[2:] for p in queue_tmp]), queue_weight)  # (logp_focal, logpdf_pos), logp_element, logp_hasatom, logp_bond
             n_tmp = len(queue_tmp)
@@ -210,18 +217,6 @@ if __name__ == '__main__':
             pool.queue = [queue_tmp[idx] for idx in next_idx]
 
             print_pool_status(pool, logger)
-            torch.save(pool, os.path.join(log_dir, 'samples_%d.pt' % global_step))
+            
     except KeyboardInterrupt:
         logger.info('Terminated. Generated molecules will be saved.')
-
-
-    # # Save sdf mols
-    sdf_dir = os.path.join(log_dir, 'SDF')
-    os.makedirs(sdf_dir)
-    with open(os.path.join(log_dir, 'SMILES.txt'), 'a') as smiles_f:
-        for i, data_finished in enumerate(pool['finished']):
-            smiles_f.write(data_finished.smiles + '\n')
-            rdmol = data_finished.rdmol
-            Chem.MolToMolFile(rdmol, os.path.join(sdf_dir, '%d.sdf' % i))
-            
-    torch.save(pool, os.path.join(log_dir, 'samples_all.pt'))
