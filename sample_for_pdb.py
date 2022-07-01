@@ -68,7 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--pdb_path', type=str,
                         default='./example/4yhj.pdb')
     parser.add_argument('--center', type=lambda s: list(map(float, s.split(','))),
-                        default=[32.0, 28.0, 36.0], 
+                        default=[-43.8, 11.3, 9.5], 
                         help='Center of the pocket bounding box, in format x,y,z')
     parser.add_argument('--bbox_size', type=float, default=23.0, 
                         help='Pocket bounding box size')
